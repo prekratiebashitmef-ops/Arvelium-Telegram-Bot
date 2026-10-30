@@ -4,7 +4,7 @@ const SERVER = "arvelium.vanilla.cool";
 export default {
   async fetch(request, env) {
     if (request.method === "GET") {
-      return new Response("Arvelium bot is running!");
+      return new Response("Arvelium Bot is running!");
     }
 
     if (request.method !== "POST") {
@@ -17,8 +17,6 @@ export default {
       const chatId = message?.chat?.id;
       const command = message?.text?.trim().split(/\s+/)[0];
 
-      console.log("Получено сообщение:", command);
-
       if (!chatId || !command) {
         return new Response("OK");
       }
@@ -27,7 +25,7 @@ export default {
 
       if (command === "/start") {
         text =
-          "👋 Привет! Это бот Arvelium Vanilla.\n\n" +
+          "👋 Привет! Это бот Arvelium.\n\n" +
           "Напиши /online, чтобы проверить сервер.";
       } else if (command === "/online") {
         try {
@@ -36,24 +34,25 @@ export default {
           );
 
           if (!response.ok) {
-            throw new Error(`Minecraft API HTTP ${response.status}`);
+            throw new Error("Minecraft API error");
           }
 
           const server = await response.json();
 
           if (server.online) {
             text =
-              "🟢 Arvelium Vanilla — РАБОТАЕТ\n\n" +
+              "🟢 Arvelium, статус активен\n\n" +
               `🌐 IP: ${SERVER}\n` +
-              `👥 Игроки: ${server.players?.online ?? 0}/${server.players?.max ?? "?"}`;
+              `👥 Игроки: ${server.players?.online ?? 0}/${server.players?.max ?? 100}`;
           } else {
             text =
-              "🔴 Arvelium Vanilla — ВЫКЛЮЧЕН\n\n" +
+              "🔴 Arvelium, статус неактивен\n\n" +
               `🌐 IP: ${SERVER}\n` +
               "👥 Игроки: недоступно";
           }
         } catch (error) {
-          console.log("Ошибка проверки Minecraft:", error.message);
+          console.log("Minecraft API error:", error.message);
+
           text =
             "⚠️ Не удалось проверить сервер\n\n" +
             `🌐 IP: ${SERVER}`;
@@ -63,7 +62,7 @@ export default {
       }
 
       if (!env.BOT_TOKEN) {
-        console.log("ОШИБКА: BOT_TOKEN не найден!");
+        console.log("BOT_TOKEN не найден!");
         return new Response("BOT_TOKEN missing", { status: 500 });
       }
 
@@ -71,7 +70,9 @@ export default {
         `https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify({
             chat_id: chatId,
             text: text
@@ -79,12 +80,11 @@ export default {
         }
       );
 
-      const telegramResult = await telegramResponse.text();
-      console.log("Ответ Telegram:", telegramResult);
+      console.log("Telegram:", await telegramResponse.text());
 
       return new Response("OK");
     } catch (error) {
-      console.log("Ошибка Worker:", error.message);
+      console.log("Worker error:", error.message);
       return new Response("Internal Error", { status: 500 });
     }
   }
