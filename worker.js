@@ -41,6 +41,18 @@ export default {
         return new Response("OK");
       }
 
+      // Проверяем, доступен ли токен в Cloudflare
+      console.log("Проверка переменной:", JSON.stringify({
+        exists: Boolean(env.BOT_TOKEN),
+        length: env.BOT_TOKEN?.length ?? 0
+      }));
+
+      if (!env.BOT_TOKEN) {
+        console.error("BOT_TOKEN не найден в Cloudflare!");
+        return new Response("BOT_TOKEN missing", { status: 500 });
+      }
+
+      // Проверяем токен через Telegram
       const telegramUrl =
         "https://api.telegram.org/bot" + env.BOT_TOKEN + "/getMe";
 
@@ -50,9 +62,10 @@ export default {
       console.log("Проверка токена:", JSON.stringify({
         ok: checkResult.ok,
         username: checkResult.result?.username,
-        error: checkResult.description
+        error: checkResult.description || checkResult.error
       }));
 
+      // Отправляем сообщение
       const telegramResponse = await fetch(
         "https://api.telegram.org/bot" + env.BOT_TOKEN + "/sendMessage",
         {
