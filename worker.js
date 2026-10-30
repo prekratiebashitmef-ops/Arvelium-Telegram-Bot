@@ -2,7 +2,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (request.method !== "POST" || url.pathname !== "/telegram") {
+    if (request.method || !== "POST" || url.pathname !== "/telegram") {
       return new Response("Arvelium Bot is running!");
     }
 
