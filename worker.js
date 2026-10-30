@@ -46,17 +46,29 @@ export default {
         return new Response("OK");
       }
 
-      const telegramResponse = await fetch(
-        "https://api.telegram.org/bot" + env.BOT_TOKEN + "/sendMessage",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text: message
-          })
-        }
-      );
+     const telegramUrl =
+  "https://api.telegram.org/bot" + env.BOT_TOKEN + "/getMe";
+
+const check = await fetch(telegramUrl);
+const checkResult = await check.json();
+
+console.log("Проверка токена:", JSON.stringify({
+  ok: checkResult.ok,
+  username: checkResult.result?.username,
+  error: checkResult.description
+}));
+
+const telegramResponse = await fetch(
+  "https://api.telegram.org/bot" + env.BOT_TOKEN + "/sendMessage",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: message
+    })
+  }
+);
 
       const telegramResult = await telegramResponse.json();
 
