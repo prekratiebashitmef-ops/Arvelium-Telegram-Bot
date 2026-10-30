@@ -9,7 +9,7 @@ export default {
     try {
       const update = await request.json();
 
-      if (!update.message?.text) {
+      if (!update.message || !update.message.text) {
         return new Response("OK");
       }
 
@@ -30,25 +30,30 @@ export default {
         const server = await response.json();
 
         if (server.online) {
+          const online = server.players?.online ?? 0;
+          const max = server.players?.max ?? "?";
+
           message =
             "🟢 Arvelium Vanilla\n" +
-            👥 Онлайн игроков: ${server.players.online}/${server.players.max};
+            "👥 Онлайн игроков: " + online + "/" + max;
         } else {
           message =
             "🔴 Arvelium Vanilla\n" +
             "👥 Сервер Offline";
         }
-      } catch {
+      } catch (error) {
         message =
           "🔴 Arvelium Vanilla\n" +
           "👥 Сервер Offline";
       }
 
       await fetch(
-        https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage,
+        "https://api.telegram.org/bot" + env.BOT_TOKEN + "/sendMessage",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify({
             chat_id: chatId,
             text: message
@@ -57,7 +62,8 @@ export default {
       );
 
       return new Response("OK");
-    } catch {
+
+    } catch (error) {
       return new Response("Error");
     }
   }
