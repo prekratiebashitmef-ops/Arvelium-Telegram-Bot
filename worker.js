@@ -1,90 +1,76 @@
+
+const SERVER = "arvelium.vanilla.cool";
+const API = `https://api.mcsrvstat.us/3/${SERVER}`;
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
     if (request.method !== "POST" || url.pathname !== "/telegram") {
-      return new Response("Arvelium Bot is running!");
+      return new Response("Arvelium Monitor is running!");
     }
 
     try {
       const update = await request.json();
+      const msg = update.message;
 
-      if (!update.message || !update.message.text) {
+      if (!msg?.text) return new Response("OK");
+
+      const chatId = msg.chat.id;
+      const command = msg.text.split(" ")[0].split("@")[0];
+
+      // Команда /online
+      if (command !== "/online") {
         return new Response("OK");
       }
 
-      const chatId = update.message.chat.id;
-      const command = update.message.text.split(" ")[0].split("@")[0];
+      let text;
 
-      let message;
+      try {
+        const response = await fetch(API);
 
-      if (command === "/start") {
-        message = "Привет! Я бот сервера Arvelium Vanilla. Напиши /online, чтобы узнать онлайн.";
-      } else if (command === "/online") {
-        try {
-          const response = await fetch(
-            "https://api.mcsrvstat.us/3/Arvelium.vanilla.cool"
-          );
+        if (!response.ok) throw new Error("API error");
 
-          const server = await response.json();
+        const server = await response.json();
 
-          message = server.online
-            ? "🟢 Arvelium Vanilla\n👥 Онлайн игроков: " +
-              (server.players?.online ?? 0) + "/" +
-              (server.players?.max ?? "?")
-            : "🔴 Arvelium Vanilla\n👥 Сервер Offline";
-        } catch (error) {
-          console.error("Ошибка проверки сервера:", error);
-          message = "🔴 Arvelium Vanilla\n👥 Сервер Offline";
+        if (server.online) {
+          text =
+            "🟢 Arvelium Vanilla — РАБОТАЕТ\n\n" +
+            "🌐 IP: " + SERVER + "\n" +
+            "👥 Игроки: " +
+            (server.players?.online ?? 0) + "/" +
+            (server.players?.max ?? "?");
+        } else {
+          text =
+            "🔴 Arvelium Vanilla — ВЫКЛЮЧЕН\n\n" +
+            "🌐 IP: " + SERVER + "\n" +
+            "👥 Игроки: недоступно";
         }
-      } else {
-        return new Response("OK");
+      } catch (error) {
+        text =
+          "🔴 Arvelium Vanilla — НЕДОСТУПЕН\n\n" +
+          "🌐 IP: " + SERVER + "\n" +
+          "👥 Игроки: недоступно";
       }
 
-      // Проверяем, доступен ли токен в Cloudflare
-      console.log("Проверка переменной:", JSON.stringify({
-        exists: Boolean(env.BOT_TOKEN),
-        length: env.BOT_TOKEN?.length ?? 0
-      }));
-
-      if (!env.BOT_TOKEN) {
-        console.error("BOT_TOKEN не найден в Cloudflare!");
-        return new Response("BOT_TOKEN missing", { status: 500 });
-      }
-
-      // Проверяем токен через Telegram
-      const telegramUrl =
-        "https://api.telegram.org/bot" + env.BOT_TOKEN + "/getMe";
-
-      const check = await fetch(telegramUrl);
-      const checkResult = await check.json();
-
-      console.log("Проверка токена:", JSON.stringify({
-        ok: checkResult.ok,
-        username: checkResult.result?.username,
-        error: checkResult.description || checkResult.error
-      }));
-
-      // Отправляем сообщение
-      const telegramResponse = await fetch(
-        "https://api.telegram.org/bot" + env.BOT_TOKEN + "/sendMessage",
+      await fetch(
+        `https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify({
             chat_id: chatId,
-            text: message
+            text: text
           })
         }
       );
 
-      const telegramResult = await telegramResponse.json();
-
-      console.log("Ответ Telegram:", JSON.stringify(telegramResult));
-
       return new Response("OK");
+
     } catch (error) {
-      console.error("Ошибка Worker:", error);
+      console.error(error);
       return new Response("Error", { status: 500 });
     }
   }
