@@ -11,49 +11,75 @@ export default {
     }
 
     try {
-      const update = await request.json();
-      const msg = update.message;
-
-      if (!msg?.text) return new Response("OK");
-
-      const chatId = msg.chat.id;
-      const command = msg.text.split(" ")[0].split("@")[0];
-
-      // Команда /online
-      if (command !== "/online") {
+      if (!env.BOT_TOKEN) {
+        console.error("BOT_TOKEN is missing!");
         return new Response("OK");
       }
 
+      const update = await request.json();
+      const msg = update.message;
+
+      if (!msg || !msg.text) {
+        return new Response("OK");
+      }
+
+      const chatId = msg.chat.id;
+      const command = msg.text
+        .trim()
+        .split(/\s+/)[0]
+        .split("@")[0]
+        .toLowerCase();
+
+      console.log("Received command:", command);
+
       let text;
 
-      try {
-        const response = await fetch(API);
+      if (command === "/start") {
+        text =
+          "👋 Привет! Это Arvelium Monitor.\n\n" +
+          "Команда /online — проверить сервер.";
+      }
 
-        if (!response.ok) throw new Error("API error");
+      else if (command === "/online") {
+        text = "⏳ Проверяю сервер Arvelium...";
 
-        const server = await response.json();
+        try {
+          const response = await fetch(API);
 
-        if (server.online) {
+          if (!response.ok) {
+            throw new Error("Minecraft API HTTP " + response.status);
+          }
+
+          const server = await response.json();
+
+          if (server.online === true) {
+            text =
+              "🟢 Arvelium Vanilla — РАБОТАЕТ\n\n" +
+              "🌐 IP: " + SERVER + "\n" +
+              "👥 Игроки: " +
+              (server.players?.online ?? 0) + "/" +
+              (server.players?.max ?? "?");
+          } else {
+            text =
+              "🔴 Arvelium Vanilla — ВЫКЛЮЧЕН\n\n" +
+              "🌐 IP: " + SERVER + "\n" +
+              "👥 Игроки: недоступно";
+          }
+        } catch (error) {
+          console.error("Minecraft check error:", error);
+
           text =
-            "🟢 Arvelium Vanilla — РАБОТАЕТ\n\n" +
-            "🌐 IP: " + SERVER + "\n" +
-            "👥 Игроки: " +
-            (server.players?.online ?? 0) + "/" +
-            (server.players?.max ?? "?");
-        } else {
-          text =
-            "🔴 Arvelium Vanilla — ВЫКЛЮЧЕН\n\n" +
+            "🔴 Arvelium Vanilla — НЕДОСТУПЕН\n\n" +
             "🌐 IP: " + SERVER + "\n" +
             "👥 Игроки: недоступно";
         }
-      } catch (error) {
-        text =
-          "🔴 Arvelium Vanilla — НЕДОСТУПЕН\n\n" +
-          "🌐 IP: " + SERVER + "\n" +
-          "👥 Игроки: недоступно";
       }
 
-      await fetch(
+      else {
+        text = "Используй команду /online";
+      }
+
+      const telegramResponse = await fetch(
         `https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`,
         {
           method: "POST",
@@ -67,11 +93,19 @@ export default {
         }
       );
 
+      const telegramResult = await telegramResponse.text();
+
+      console.log("Telegram response:", telegramResult);
+
+      if (!telegramResponse.ok) {
+        console.error("Telegram sendMessage failed");
+      }
+
       return new Response("OK");
 
     } catch (error) {
-      console.error(error);
-      return new Response("Error", { status: 500 });
+      console.error("Worker error:", error);
+      return new Response("OK");
     }
   }
 };
