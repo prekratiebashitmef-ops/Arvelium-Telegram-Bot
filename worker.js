@@ -2,17 +2,12 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (request.method || !== "POST" || url.pathname !== "/telegram") {
+    if (request.method !== "POST" || url.pathname !== "/telegram") {
       return new Response("Arvelium Bot is running!");
     }
 
     try {
       const update = await request.json();
-
-      console.log("Получено сообщение:", JSON.stringify({
-        text: update.message?.text,
-        chatId: update.message?.chat?.id
-      }));
 
       if (!update.message || !update.message.text) {
         return new Response("OK");
@@ -46,29 +41,29 @@ export default {
         return new Response("OK");
       }
 
-     const telegramUrl =
-  "https://api.telegram.org/bot" + env.BOT_TOKEN + "/getMe";
+      const telegramUrl =
+        "https://api.telegram.org/bot" + env.BOT_TOKEN + "/getMe";
 
-const check = await fetch(telegramUrl);
-const checkResult = await check.json();
+      const check = await fetch(telegramUrl);
+      const checkResult = await check.json();
 
-console.log("Проверка токена:", JSON.stringify({
-  ok: checkResult.ok,
-  username: checkResult.result?.username,
-  error: checkResult.description
-}));
+      console.log("Проверка токена:", JSON.stringify({
+        ok: checkResult.ok,
+        username: checkResult.result?.username,
+        error: checkResult.description
+      }));
 
-const telegramResponse = await fetch(
-  "https://api.telegram.org/bot" + env.BOT_TOKEN + "/sendMessage",
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: message
-    })
-  }
-);
+      const telegramResponse = await fetch(
+        "https://api.telegram.org/bot" + env.BOT_TOKEN + "/sendMessage",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: message
+          })
+        }
+      );
 
       const telegramResult = await telegramResponse.json();
 
