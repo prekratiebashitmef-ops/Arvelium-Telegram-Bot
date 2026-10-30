@@ -1,4 +1,3 @@
-
 const SERVER = "arvelium.vanilla.cool";
 const API = `https://api.mcsrvstat.us/3/${SERVER}`;
 
@@ -6,16 +5,21 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // Проверяем доступность Worker
     if (request.method !== "POST" || url.pathname !== "/telegram") {
       return new Response("Arvelium Monitor is running!");
     }
 
-    try {
-      if (!env.BOT_TOKEN) {
-        console.error("BOT_TOKEN is missing!");
-        return new Response("OK");
-      }
+    // Диагностика переменных окружения
+    console.log("ENV KEYS:", Object.keys(env));
+    console.log("BOT_TOKEN EXISTS:", Boolean(env.BOT_TOKEN));
 
+    if (!env.BOT_TOKEN) {
+      console.error("BOT_TOKEN is missing!");
+      return new Response("OK");
+    }
+
+    try {
       const update = await request.json();
       const msg = update.message;
 
@@ -24,6 +28,7 @@ export default {
       }
 
       const chatId = msg.chat.id;
+
       const command = msg.text
         .trim()
         .split(/\s+/)[0]
@@ -65,6 +70,7 @@ export default {
               "🌐 IP: " + SERVER + "\n" +
               "👥 Игроки: недоступно";
           }
+
         } catch (error) {
           console.error("Minecraft check error:", error);
 
@@ -79,6 +85,7 @@ export default {
         text = "Используй команду /online";
       }
 
+      // Отправляем сообщение в Telegram
       const telegramResponse = await fetch(
         `https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`,
         {
@@ -93,13 +100,10 @@ export default {
         }
       );
 
-      const telegramResult = await telegramResponse.text();
+      const result = await telegramResponse.text();
 
-      console.log("Telegram response:", telegramResult);
-
-      if (!telegramResponse.ok) {
-        console.error("Telegram sendMessage failed");
-      }
+      console.log("Telegram HTTP status:", telegramResponse.status);
+      console.log("Telegram response:", result);
 
       return new Response("OK");
 
