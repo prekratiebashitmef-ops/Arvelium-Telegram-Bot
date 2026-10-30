@@ -16,35 +16,39 @@ export default {
       const chatId = update.message.chat.id;
       const command = update.message.text.split(" ")[0].split("@")[0];
 
-      if (command !== "/online") {
-        return new Response("OK");
-      }
-
       let message;
 
-      try {
-        const response = await fetch(
-          "https://api.mcsrvstat.us/3/Arvelium.vanilla.cool"
-        );
+      if (command === "/start") {
+        message = "Привет! Я бот сервера Arvelium Vanilla. Напиши /online, чтобы узнать онлайн.";
+      } 
+      else if (command === "/online") {
+        try {
+          const response = await fetch(
+            "https://api.mcsrvstat.us/3/Arvelium.vanilla.cool"
+          );
 
-        const server = await response.json();
+          const server = await response.json();
 
-        if (server.online) {
-          const online = server.players?.online ?? 0;
-          const max = server.players?.max ?? "?";
+          if (server.online) {
+            const online = server.players?.online ?? 0;
+            const max = server.players?.max ?? "?";
 
-          message =
-            "🟢 Arvelium Vanilla\n" +
-            "👥 Онлайн игроков: " + online + "/" + max;
-        } else {
+            message =
+              "🟢 Arvelium Vanilla\n" +
+              "👥 Онлайн игроков: " + online + "/" + max;
+          } else {
+            message =
+              "🔴 Arvelium Vanilla\n" +
+              "👥 Сервер Offline";
+          }
+        } catch {
           message =
             "🔴 Arvelium Vanilla\n" +
             "👥 Сервер Offline";
         }
-      } catch (error) {
-        message =
-          "🔴 Arvelium Vanilla\n" +
-          "👥 Сервер Offline";
+      } 
+      else {
+        return new Response("OK");
       }
 
       await fetch(
