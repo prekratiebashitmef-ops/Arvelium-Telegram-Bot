@@ -15,8 +15,19 @@ export default {
       const update = await request.json();
       const message = update.message;
 
+      // Диагностика входящего сообщения
+      console.log("Incoming message:", JSON.stringify({
+        chat: message?.chat,
+        message_thread_id: message?.message_thread_id,
+        is_topic_message: message?.is_topic_message,
+        text: message?.text
+      }));
+
       const chatId = message?.chat?.id;
-      const command = message?.text?.trim().split(/\s+/)[0]?.split("@")[0];
+      const command = message?.text
+        ?.trim()
+        .split(/\s+/)[0]
+        ?.split("@")[0];
 
       if (!chatId || !command) {
         return new Response("OK");
@@ -53,6 +64,7 @@ export default {
           }
         } catch (error) {
           console.log("Minecraft API:", error.message);
+
           text =
             "⚠️ Не удалось проверить сервер\n\n" +
             `🌐 IP: ${SERVER}`;
@@ -71,7 +83,9 @@ export default {
           `https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json"
+            },
             body: JSON.stringify({
               chat_id: chatId,
               text
