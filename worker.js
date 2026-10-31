@@ -15,7 +15,7 @@ export default {
       const update = await request.json();
       const message = update.message;
 
-      // Диагностика входящего сообщения
+      // Информация о входящем сообщении
       console.log("Incoming message:", JSON.stringify({
         chat: message?.chat,
         message_thread_id: message?.message_thread_id,
@@ -78,6 +78,16 @@ export default {
         return new Response("OK");
       }
 
+      // Отправка ответа в ту же тему, откуда пришла команда
+      const payload = {
+        chat_id: chatId,
+        text
+      };
+
+      if (message.message_thread_id) {
+        payload.message_thread_id = message.message_thread_id;
+      }
+
       try {
         const result = await fetch(
           `https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`,
@@ -86,10 +96,7 @@ export default {
             headers: {
               "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-              chat_id: chatId,
-              text
-            })
+            body: JSON.stringify(payload)
           }
         );
 
