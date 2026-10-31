@@ -14,8 +14,9 @@ export default {
     try {
       const update = await request.json();
       const message = update.message;
+
       const chatId = message?.chat?.id;
-      const command = message?.text?.trim().split(/\s+/)[0];
+      const command = message?.text?.trim().split(/\s+/)[0]?.split("@")[0];
 
       if (!chatId || !command) {
         return new Response("OK");
@@ -51,8 +52,7 @@ export default {
               "👥 Игроки: недоступно";
           }
         } catch (error) {
-          console.log("Minecraft API error:", error.message);
-
+          console.log("Minecraft API:", error.message);
           text =
             "⚠️ Не удалось проверить сервер\n\n" +
             `🌐 IP: ${SERVER}`;
@@ -63,29 +63,31 @@ export default {
 
       if (!env.BOT_TOKEN) {
         console.log("BOT_TOKEN не найден!");
-        return new Response("BOT_TOKEN missing", { status: 500 });
+        return new Response("OK");
       }
 
-      const telegramResponse = await fetch(
-        `https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text: text
-          })
-        }
-      );
+      try {
+        const result = await fetch(
+          `https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text
+            })
+          }
+        );
 
-      console.log("Telegram:", await telegramResponse.text());
+        console.log("Telegram response:", await result.text());
+      } catch (error) {
+        console.log("Telegram send error:", error.message);
+      }
 
       return new Response("OK");
     } catch (error) {
       console.log("Worker error:", error.message);
-      return new Response("Internal Error", { status: 500 });
+      return new Response("OK");
     }
   }
 };
